@@ -12,10 +12,12 @@ const margin = {
   width = 920 - margin.left - margin.right,
   height = 630 - margin.top - margin.bottom;
 
+const color = d3.scaleOrdinal(d3.schemeTableau10);
+
 const x = d3.scaleLinear().range([0, width]);
 const y = d3.scaleTime().range([0, height]);
 
-const timeFormat = d3.timeFormat("%M:$S");
+const timeFormat = d3.timeFormat("%M:%S");
 
 const xAxis = d3.axisBottom(x).tickFormat(d3.format("d"));
 const yAxis = d3.axisLeft(y).tickFormat(timeFormat);
@@ -42,6 +44,13 @@ d3.json(
 )
   .then(data => {
     console.log(data);
+
+    data.forEach(function(d) {
+      const parsedTime = d.Time.split(":");
+      console.log(parsedTime);
+      d.Time = new Date(1970, 0, 1, 0, parsedTime[0], parsedTime[1]);
+    });
+
     x.domain([d3.min(data, d => d.Year - 1), d3.max(data, d => d.Year + 1)]);
     y.domain(d3.extent(data, d => d.Time));
 
@@ -70,6 +79,27 @@ d3.json(
       .attr("dy", ".71em")
       .style("text-anchor", "end")
       .text("Best Time (minutes)");
+
+    svg
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -160)
+      .attr("y", -44)
+      .style("font-size", 18)
+      .text("Time in Minutes");
+
+    svg
+      .selectAll(".dot")
+      .data(data)
+      .enter()
+      .append("circle")
+      .attr("class", "dot")
+      .attr("r", 6)
+      .attr("cx", d => x(d.Year))
+      .attr("cy", d => y(d.Time))
+      .attr("data-xvalue", d => d.Year)
+      .attr("data-yvalue", d => d.Time.toISOString())
+      .style("fill", d => color(d.Doping != ""));
   })
   .catch(error => {
     console.error(error);
